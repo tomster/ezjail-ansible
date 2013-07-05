@@ -1,0 +1,7 @@
+[jailhost]
+192.168.91.131
+appserver
+ansible
+
+[jailhost:vars]
+ansible_python_interpreter=/usr/local/bin/python
