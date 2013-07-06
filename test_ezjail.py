@@ -12,21 +12,23 @@ ZR  3    127.0.0.2       appserver                      /usr/jails/appserver
     '''
 
 
-def get_dummy_module(args):
+def get_dummy_module(args, run_command_results=None):
     testing.MODULE_ARGS = args
-    return DummyAnsibleModule(**MODULE_SPECS)
+    dummy = DummyAnsibleModule(**MODULE_SPECS)
+    dummy.run_command_results = run_command_results
+    return dummy
 
 
 def test_jail_exists():
-    module = get_dummy_module('state=present name=unbound ip_addr=127.0.0.4')
-    module.run_command = MagicMock(return_value=(0, ezjail_admin_list_output, ''))
+    module = get_dummy_module('state=present name=unbound ip_addr=127.0.0.4',
+        run_command_results=[(0, ezjail_admin_list_output, '')])
     jail = Ezjail(module)
     assert jail.exists()
 
 
 def test_jail_does_not_exist():
-    module = get_dummy_module('state=present name=foobar ip_addr=127.0.0.4')
-    module.run_command = MagicMock(return_value=(0, ezjail_admin_list_output, ''))
+    module = get_dummy_module(args='state=present name=foobar ip_addr=127.0.0.4',
+        run_command_results=[(0, ezjail_admin_list_output, '')])
     jail = Ezjail(module)
     assert not jail.exists()
 

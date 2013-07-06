@@ -887,6 +887,9 @@ class AnsibleModule(object):
 
 class DummyAnsibleModule(AnsibleModule):
 
+    run_command_count = 0
+    run_command_results = []
+
     def get_bin_path(self, arg, required=False, opt_dirs=[]):
         return '/usr/bin/%s' % arg
 
@@ -903,3 +906,8 @@ class DummyAnsibleModule(AnsibleModule):
         assert 'msg' in kwargs, "implementation error -- msg to explain the error is required"
         kwargs['failed'] = True
         return kwargs
+
+    def run_command(self, args, check_rc=False, close_fds=False, executable=None, data=None):
+        result = self.run_command_results[self.run_command_count]
+        self.run_command_count += 1
+        return result
