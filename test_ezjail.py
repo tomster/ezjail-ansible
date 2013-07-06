@@ -22,20 +22,17 @@ def module():
     return AnsibleModule()
 
 
-@fixture
-def jail(module):
-    return Ezjail(module=module, name='foo')
-
-
 def test_jail_exists(module):
     module.run_command = MagicMock(return_value=(0, ezjail_admin_list_output, ''))
-    jail = Ezjail(module=module, name='unbound')
+    module.params = dict(state='present', name='unbound', ip_addr='127.0.0.4')
+    jail = Ezjail(module)
     assert jail.exists()
 
 
 def test_jail_does_not_exist(module):
     module.run_command = MagicMock(return_value=(0, ezjail_admin_list_output, ''))
-    jail = Ezjail(module=module, name='foo')
+    module.params = dict(state='present', name='foobar', ip_addr='127.0.0.4')
+    jail = Ezjail(module)
     assert not jail.exists()
 
 

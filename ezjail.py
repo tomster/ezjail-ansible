@@ -25,10 +25,11 @@ class Ezjail(object):
 
     platform = 'FreeBSD'
 
-    def __init__(self, module, name):
+    def __init__(self, module):
         self.module = module
-        self.name = name
         self.changed = False
+        self.state = self.module.params.pop('state')
+        self.name = self.module.params.pop('name')
         self.cmd = [self.module.get_bin_path('ezjail-admin', required=True)]
 
     def ezjail_admin(self, command, *params):
@@ -47,6 +48,20 @@ class Ezjail(object):
     def destroy(self):
         raise NotImplemented
 
+    def __call__(self):
+
+        result = dict(name=self.name, state=self.state)
+
+        if self.state == 'present':
+            if not self.exists():
+                self.create()
+        elif self.state == 'absent':
+            if self.exists():
+                self.destroy()
+
+        result['changed'] = self.changed
+        return result
+
 
 def main():
     module = AnsibleModule(
@@ -57,23 +72,11 @@ def main():
             ),
         supports_check_mode=True
         )
-
-    state = module.params.pop('state')
-    name = module.params.pop('name')
-    result = dict(name=name, state=state)
-
-    jail = Ezjail(module, name)
-
-    if state == 'present':
-        if not jail.exists():
-            jail.create()
-
-    elif state == 'absent':
-        if jail.exists():
-            jail.destroy()
-
-    result['changed'] = jail.changed
-    module.exit_json(**result)
+    result = Ezjail(module)()
+    if 'failed' in result:
+        module.fail_json(**result)
+    else:
+        module.exit_json(**result)
 
 # include magic from lib/ansible/module_common.py
 #<<INCLUDE_ANSIBLE_MODULE_COMMON>>
