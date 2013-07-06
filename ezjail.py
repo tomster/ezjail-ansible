@@ -38,8 +38,6 @@ class Ezjail(object):
 
 
 def main():
-
-    # FIXME: should use dict() constructor like other modules, required=False is default
     module = AnsibleModule(
         argument_spec=dict(
             name=dict(required=True, type='str'),
