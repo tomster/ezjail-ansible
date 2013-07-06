@@ -64,8 +64,11 @@ def main():
             jail.destroy()
 
     result['changed'] = jail.changed
+    result['__name__'] = __name__
+    result['selfname'] = jail.name
     module.exit_json(**result)
 
 # include magic from lib/ansible/module_common.py
 #<<INCLUDE_ANSIBLE_MODULE_COMMON>>
-main()
+if __name__ == "__main__":
+    main()
