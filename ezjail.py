@@ -30,10 +30,10 @@ class Ezjail(object):
         self.changed = False
         self.state = self.module.params.pop('state')
         self.name = self.module.params.pop('name')
-        self.cmd = [self.module.get_bin_path('ezjail-admin', required=True)]
+        self.cmd = self.module.get_bin_path('ezjail-admin', required=True)
 
     def ezjail_admin(self, command, *params):
-        return self.module.run_command(' '.join(self.cmd + [command] + list(params)))
+        return self.module.run_command(' '.join(['sudo', self.cmd, command] + list(params)))
 
     def exists(self):
         (rc, out, err) = self.ezjail_admin('list')
@@ -83,7 +83,7 @@ MODULE_SPECS = dict(
 
 def main():
     module = AnsibleModule(**MODULE_SPECS)
-    result = Ezjail(module)
+    result = Ezjail(module)()
     if 'failed' in result:
         module.fail_json(**result)
     else:
