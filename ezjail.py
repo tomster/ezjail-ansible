@@ -40,10 +40,18 @@ class Ezjail(object):
         return self.name in list_jails(out)
 
     def create(self):
+        result = dict()
         if self.module.check_mode:
             self.changed = True
-            return
-        self.changed = True
+            return result
+        (rc, out, err) = self.ezjail_admin('create', self.name, self.module.params['ip_addr'])
+        if rc == 0:
+            self.changed = True
+        else:
+            self.changed = False
+            result['failed'] = True
+            result['msg'] = "Could not create jail. %s%s" % (out, err)
+        return result
 
     def destroy(self):
         raise NotImplemented
@@ -54,7 +62,7 @@ class Ezjail(object):
 
         if self.state == 'present':
             if not self.exists():
-                self.create()
+                result.update(self.create())
         elif self.state == 'absent':
             if self.exists():
                 self.destroy()

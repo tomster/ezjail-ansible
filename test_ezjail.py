@@ -33,6 +33,15 @@ def test_jail_does_not_exist():
     assert not jail.exists()
 
 
+def test_create_jail():
+    module = get_dummy_module('state=present name=foobar ip_addr=127.0.0.4')
+    module.run_command = MagicMock(return_value=(0, ezjail_admin_list_output, ''))
+    jail = Ezjail(module)
+    result = jail()
+    assert 'failed' not in result
+    assert result['state'] == 'present'
+
+
 def test_parse_ezjail_admin_list():
     jails = list_jails(ezjail_admin_list_output)
     assert 'appserver' in jails
