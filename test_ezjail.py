@@ -1,6 +1,7 @@
 from mock import MagicMock
-from pytest import fixture
-from ezjail import Ezjail, list_jails
+from ezjail import Ezjail, list_jails, MODULE_SPECS
+import testing
+from testing import DummyAnsibleModule
 
 ezjail_admin_list_output = '''STA JID  IP              Hostname                       Root Directory
 --- ---- --------------- ------------------------------ ------------------------
@@ -11,27 +12,21 @@ ZR  3    127.0.0.2       appserver                      /usr/jails/appserver
     '''
 
 
-class AnsibleModule(object):
-
-    def get_bin_path(self, arg, required=False, opt_dirs=[]):
-        return '/usr/bin/%s' % arg
-
-
-@fixture
-def module():
-    return AnsibleModule()
+def get_dummy_module(args):
+    testing.MODULE_ARGS = args
+    return DummyAnsibleModule(**MODULE_SPECS)
 
 
-def test_jail_exists(module):
+def test_jail_exists():
+    module = get_dummy_module('state=present name=unbound ip_addr=127.0.0.4')
     module.run_command = MagicMock(return_value=(0, ezjail_admin_list_output, ''))
-    module.params = dict(state='present', name='unbound', ip_addr='127.0.0.4')
     jail = Ezjail(module)
     assert jail.exists()
 
 
-def test_jail_does_not_exist(module):
+def test_jail_does_not_exist():
+    module = get_dummy_module('state=present name=foobar ip_addr=127.0.0.4')
     module.run_command = MagicMock(return_value=(0, ezjail_admin_list_output, ''))
-    module.params = dict(state='present', name='foobar', ip_addr='127.0.0.4')
     jail = Ezjail(module)
     assert not jail.exists()
 

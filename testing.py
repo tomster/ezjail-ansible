@@ -1,6 +1,6 @@
-MODULE_ARGS = <<INCLUDE_ANSIBLE_MODULE_ARGS>>
-MODULE_LANG = <<INCLUDE_ANSIBLE_MODULE_LANG>>
-MODULE_COMPLEX_ARGS = <<INCLUDE_ANSIBLE_MODULE_COMPLEX_ARGS>>
+MODULE_ARGS = None
+MODULE_LANG = 'C'
+MODULE_COMPLEX_ARGS = '{}'
 
 BOOLEANS_TRUE = ['yes', 'on', '1', 'true', 1]
 BOOLEANS_FALSE = ['no', 'off', '0', 'false', 0]
@@ -48,17 +48,10 @@ try:
 except ImportError:
     pass
 
-HAVE_HASHLIB=False
 try:
     from hashlib import md5 as _md5
-    HAVE_HASHLIB=True
 except ImportError:
     from md5 import md5 as _md5
-
-try:
-    from hashlib import sha256 as _sha256
-except ImportError:
-    pass
 
 try:
   from systemd import journal
@@ -143,7 +136,6 @@ class AnsibleModule(object):
         self.check_mode = False
         
         self.aliases = {}
-        
         if add_file_common_args:
             for k, v in FILE_COMMON_ARGUMENTS.iteritems():
                 if k not in self.argument_spec:
@@ -756,13 +748,13 @@ class AnsibleModule(object):
                 or stat.S_IXGRP & os.stat(path)[stat.ST_MODE]
                 or stat.S_IXOTH & os.stat(path)[stat.ST_MODE])
 
-    def digest_from_file(self, filename, digest_method):
-        ''' Return hex digest of local file for a given digest_method, or None if file is not present. '''
+    def md5(self, filename):
+        ''' Return MD5 hex digest of local file, or None if file is not present. '''
         if not os.path.exists(filename):
             return None
         if os.path.isdir(filename):
-            self.fail_json(msg="attempted to take checksum of directory: %s" % filename)
-        digest = digest_method
+            self.fail_json(msg="attempted to take md5sum of directory: %s" % filename)
+        digest = _md5()
         blocksize = 64 * 1024
         infile = open(filename, 'rb')
         block = infile.read(blocksize)
@@ -771,16 +763,6 @@ class AnsibleModule(object):
             block = infile.read(blocksize)
         infile.close()
         return digest.hexdigest()
-
-    def md5(self, filename):
-        ''' Return MD5 hex digest of local file using digest_from_file(). '''
-        return self.digest_from_file(filename, _md5())
-
-    def sha256(self, filename):
-        ''' Return SHA-256 hex digest of local file using digest_from_file(). '''
-        if not HAVE_HASHLIB:
-            self.fail_json(msg="SHA-256 checksums require hashlib, which is available in Python 2.5 and higher")
-        return self.digest_from_file(filename, _sha256())
 
     def backup_local(self, fn):
         '''make a date-marked backup of the specified file, return True or False on success or failure'''
@@ -838,7 +820,7 @@ class AnsibleModule(object):
             self.cleanup(tmp_dest)
             self.fail_json(msg='Could not replace file: %s to %s: %s' % (src, dest, e))
 
-    def run_command(self, args, check_rc=False, close_fds=False, executable=None, data=None, binary_data=False):
+    def run_command(self, args, check_rc=False, close_fds=False, executable=None, data=None):
         '''
         Execute a command, returns rc, stdout, and stderr.
         args is the command to run
@@ -874,8 +856,7 @@ class AnsibleModule(object):
                                    stderr=subprocess.PIPE)
             if data:
                 cmd.stdin.write(data)
-                if not binary_data:
-                    cmd.stdin.write('\\n')
+                cmd.stdin.write('\n')
             out, err = cmd.communicate()
             rc = cmd.returncode
         except (OSError, IOError), e:
@@ -902,3 +883,23 @@ class AnsibleModule(object):
             if size >= limit:
                 break
         return '%.2f %s' % (float(size)/ limit, suffix)
+
+
+class DummyAnsibleModule(AnsibleModule):
+
+    def get_bin_path(self, arg, required=False, opt_dirs=[]):
+        return '/usr/bin/%s' % arg
+
+    def exit_json(self, **kwargs):
+        ''' return from the module, without error '''
+        self.add_path_info(kwargs)
+        if 'changed' not in kwargs:
+            kwargs['changed'] = False
+        return kwargs
+
+    def fail_json(self, **kwargs):
+        ''' return from the module, with an error message '''
+        self.add_path_info(kwargs)
+        assert 'msg' in kwargs, "implementation error -- msg to explain the error is required"
+        kwargs['failed'] = True
+        return kwargs

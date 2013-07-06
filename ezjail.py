@@ -63,16 +63,19 @@ class Ezjail(object):
         return result
 
 
+MODULE_SPECS = dict(
+    argument_spec=dict(
+        name=dict(required=True, type='str'),
+        state=dict(default='present', choices=['present', 'absent'], type='str'),
+        ip_addr=dict(required=True, type='str'),
+        ),
+    supports_check_mode=True
+)
+
+
 def main():
-    module = AnsibleModule(
-        argument_spec=dict(
-            name=dict(required=True, type='str'),
-            state=dict(default='present', choices=['present', 'absent'], type='str'),
-            ip_addr=dict(required=True, type='str'),
-            ),
-        supports_check_mode=True
-        )
-    result = Ezjail(module)()
+    module = AnsibleModule(**MODULE_SPECS)
+    result = Ezjail(module)
     if 'failed' in result:
         module.fail_json(**result)
     else:
