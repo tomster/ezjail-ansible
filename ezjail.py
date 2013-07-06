@@ -29,20 +29,20 @@ class Ezjail(object):
         self.module = module
         self.name = name
         self.changed = False
+        self.cmd = [self.module.get_bin_path('ezjail-admin', required=True)]
+
+    def ezjail_admin(self, command, *params):
+        return self.module.run_command(' '.join(self.cmd + [command] + list(params)))
 
     def exists(self):
-        cmd = [self.module.get_bin_path('ezjail-admin', True)]
-        cmd.append('list')
-        (rc, out, err) = self.module.run_command(' '.join(cmd))
-        if rc == 0:
-            return True
-        else:
-            return False
+        (rc, out, err) = self.ezjail_admin('list')
+        return self.name in list_jails(out)
 
     def create(self):
         if self.module.check_mode:
             self.changed = True
             return
+        self.changed = True
 
     def destroy(self):
         raise NotImplemented
@@ -60,9 +60,7 @@ def main():
 
     state = module.params.pop('state')
     name = module.params.pop('name')
-    result = {}
-    result['name'] = name
-    result['state'] = state
+    result = dict(name=name, state=state)
 
     jail = Ezjail(module, name)
 
@@ -75,8 +73,6 @@ def main():
             jail.destroy()
 
     result['changed'] = jail.changed
-    result['__name__'] = __name__
-    result['selfname'] = jail.name
     module.exit_json(**result)
 
 # include magic from lib/ansible/module_common.py
