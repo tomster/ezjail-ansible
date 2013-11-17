@@ -44,7 +44,7 @@ class Ezjail(object):
         if self.module.check_mode:
             self.changed = True
             return result
-        (rc, out, err) = self.ezjail_admin('create', self.name, self.module.params['ip_addr'])
+        (rc, out, err) = self.ezjail_admin('create', '-c',self.module.params['disktype'], self.name, self.module.params['ip_addr'])
         if rc == 0:
             self.changed = True
         else:
@@ -75,6 +75,7 @@ MODULE_SPECS = dict(
     argument_spec=dict(
         name=dict(required=True, type='str'),
         state=dict(default='present', choices=['present', 'absent'], type='str'),
+        disktype=dict(default='simple', choices=['simple', 'bde', 'eli', 'zfs'], type='str'),
         ip_addr=dict(required=True, type='str'),
         ),
     supports_check_mode=True
