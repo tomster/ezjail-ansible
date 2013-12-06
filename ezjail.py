@@ -50,6 +50,11 @@ class Ezjail(object):
             self.module.params['disktype'], self.name, self.module.params['ip_addr'])
         if rc == 0:
             self.changed = True
+            if self.state == 'running':
+                (rc, out, err) = self.ezjail_admin('start', 'webserver')
+                if rc != 0:
+                    result['failed'] = True
+                    result['msg'] = "Could not start jail. %s%s" % (out, err)
         else:
             self.changed = False
             result['failed'] = True
@@ -63,7 +68,7 @@ class Ezjail(object):
 
         result = dict(name=self.name, state=self.state)
 
-        if self.state == 'present':
+        if self.state in ['present', 'running']:
             if not self.exists():
                 result.update(self.create())
         elif self.state == 'absent':
@@ -77,7 +82,7 @@ class Ezjail(object):
 MODULE_SPECS = dict(
     argument_spec=dict(
         name=dict(required=True, type='str'),
-        state=dict(default='present', choices=['present', 'absent'], type='str'),
+        state=dict(default='present', choices=['present', 'absent', 'running'], type='str'),
         disktype=dict(default='simple', choices=['simple', 'bde', 'eli', 'zfs'], type='str'),
         ip_addr=dict(required=True, type='str'),
         ),
