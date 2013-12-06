@@ -13,7 +13,8 @@ from collections import OrderedDict
 
 
 def list_jails(output):
-    ''' parses the output from calling `ezjail-admin list` and returns a python data structure'''
+    ''' parses the output from calling `ezjail-admin list` and returns a python
+    data structure'''
     jails = OrderedDict()
     for line in output.split('\n')[2:-1]:
         entry = dict(zip(['status', 'jid', 'ip', 'name', 'path'], line.split()))
@@ -33,7 +34,8 @@ class Ezjail(object):
         self.cmd = self.module.get_bin_path('ezjail-admin', required=True)
 
     def ezjail_admin(self, command, *params):
-        return self.module.run_command(' '.join(['sudo', self.cmd, command] + list(params)))
+        return self.module.run_command(' '.join(['sudo', self.cmd, command]
+            + list(params)))
 
     def exists(self):
         (rc, out, err) = self.ezjail_admin('list')
@@ -44,7 +46,8 @@ class Ezjail(object):
         if self.module.check_mode:
             self.changed = True
             return result
-        (rc, out, err) = self.ezjail_admin('create', '-c',self.module.params['disktype'], self.name, self.module.params['ip_addr'])
+        (rc, out, err) = self.ezjail_admin('create', '-c',
+            self.module.params['disktype'], self.name, self.module.params['ip_addr'])
         if rc == 0:
             self.changed = True
         else:
