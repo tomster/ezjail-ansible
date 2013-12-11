@@ -9,19 +9,6 @@ description:
     - Manage FreeBSD jails
 '''
 
-from collections import OrderedDict
-
-
-def list_jails(output):
-    ''' parses the output from calling `ezjail-admin list` and returns a python
-    data structure'''
-    jails = OrderedDict()
-    for line in output.split('\n')[2:-1]:
-        entry = dict(zip(['status', 'jid', 'ip', 'name', 'path'], line.split()))
-        jails[entry.pop('name')] = entry
-    return jails
-
-
 class Ezjail(object):
 
     platform = 'FreeBSD'
@@ -38,8 +25,8 @@ class Ezjail(object):
             + list(params)))
 
     def exists(self):
-        (rc, out, err) = self.ezjail_admin('list')
-        return self.name in list_jails(out)
+        (rc, out, err) = self.ezjail_admin('config', '-r', 'test', self.name)
+        return rc==0
 
     def create(self):
         result = dict()
